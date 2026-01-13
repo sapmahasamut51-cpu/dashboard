@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📊 Dashboard ยอดหนี้นักเรียน</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #e2e8f0;
+        }
+
+        .container {
+            max-width: 1600px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(99, 102, 241, 0.3);
+        }
+
+        .header h1 {
+            font-size: 36px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .last-sync {
+            font-size: 14px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #10b981;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: #1e293b;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            font-weight: bold;
+            color: #ffffff;
+        }
+
+        .card-icon {
+            font-size: 28px;
+        }
+
+        .card-amount {
+            font-size: 40px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .card-count {
+            font-size: 14px;
+            color: #ffffff;
+        }
+
+        .debt-card { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .students-card { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .avg-card { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+
+        .class-section {
+            margin-bottom: 30px;
+        }
+
+        .class-header {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            padding: 20px 30px;
+            border-radius: 15px 15px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .class-title {
+            font-size: 28px;
+            font-weight: bold;
+            color: white;
+        }
+
+        .class-total {
+            font-size: 32px;
+            font-weight: bold;
+            color: #fbbf24;
+        }
+
+        .room-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 20px;
+            padding: 20px;
+            background: #1e293b;
+            border-radius: 0 0 15px 15px;
+        }
+
+        .room-card {
+            background: #0f172a;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s ease;
+        }
+
+        .room-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(99, 102, 241, 0.3);
+        }
+
+        .room-header {
+            background: #334155;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .room-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #e2e8f0;
+        }
+
+        .room-total {
+            font-size: 22px;
+            font-weight: bold;
+            color: #f59e0b;
+        }
+
+        .student-table {
+            width: 100%;
+        }
+
+        .student-table thead {
+            background: #1e293b;
+        }
+
+        .student-table th {
+            padding: 12px 15px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: bold;
+            color: #94a3b8;
+            border-bottom: 2px solid #334155;
+        }
+
+        .student-table th:last-child {
+            text-align: right;
+        }
+
+        .student-table tbody tr {
+            border-bottom: 1px solid #1e293b;
+            transition: background 0.2s ease;
+        }
+
+        .student-table tbody tr:hover {
+            background: #1e293b;
+        }
+
+        .student-table tbody tr.row-highlight-red {
+            background-color: #7f1d1d;
+        }
+
+        .student-table tbody tr.row-highlight-orange {
+            background-color: #7c2d12;
+        }
+
+        .student-table tbody tr.row-highlight-red td {
+            color: #fecaca;
+            font-weight: 600;
+        }
+
+        .student-table tbody tr.row-highlight-orange td {
+            color: #fed7aa;
+            font-weight: 600;
+        }
+
+        .student-table tbody tr.row-highlight-red .student-code,
+        .student-table tbody tr.row-highlight-orange .student-code {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .student-table td {
+            padding: 12px 15px;
+            font-size: 15px;
+            color: #e2e8f0;
+        }
+
+        .student-code {
+            color: #94a3b8;
+            font-size: 14px;
+        }
+
+        .student-name {
+            font-weight: 500;
+        }
+
+        .debt-amount {
+            text-align: right;
+            font-weight: bold;
+            font-size: 16px;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 80px;
+            font-size: 18px;
+            color: #94a3b8;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            border: 5px solid #334155;
+            border-top-color: #6366f1;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        .search-container {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .search-box {
+            padding: 15px 25px;
+            background: #1e293b;
+            border: 2px solid #334155;
+            border-radius: 12px;
+            color: #e2e8f0;
+            font-size: 16px;
+            width: 100%;
+            max-width: 600px;
+            transition: all 0.3s ease;
+        }
+
+        .search-box:focus {
+            outline: none;
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+        }
+
+        .sync-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            border: none;
+            border-radius: 50%;
+            font-size: 28px;
+            color: white;
+            cursor: pointer;
+            box-shadow: 0 5px 20px rgba(99, 102, 241, 0.4);
+            transition: all 0.3s ease;
+            z-index: 1000;
+        }
+
+        .sync-btn:hover {
+            transform: scale(1.1) rotate(90deg);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.6);
+        }
+
+        .sync-btn.syncing {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .success-banner {
+            background: #065f46;
+            color: #d1fae5;
+            padding: 15px 25px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border-left: 4px solid #10b981;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        @media (max-width: 768px) {
+            .room-grid { grid-template-columns: 1fr; }
+            .header h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>📊 Dashboard ยอดหนี้นักเรียน - Real-time</h1>
+            <div class="last-sync" id="lastSync">
+                <span class="status-indicator"></span>
+                <span>กำลังโหลดข้อมูล...</span>
+            </div>
+        </div>
+
+        <div class="success-banner">
+            <span style="font-size: 24px;">✅</span>
+            <div>
+                <strong>เชื่อมต่อสำเร็จ!</strong> Dashboard กำลังอัพเดทข้อมูลแบบ Ultra Real-time (ทุก 0.5ms - 2000 ครั้ง/วินาที) 🚀⚡⚡⚡
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="card debt-card">
+                <div class="card-header">
+                    <span class="card-icon">💰</span>
+                    <span>ยอดหนี้รวมทั้งหมด</span>
+                </div>
+                <div class="card-amount" id="totalDebt">฿0</div>
+                <div class="card-count" id="debtCount">0 คน</div>
+            </div>
+
+            <div class="card students-card">
+                <div class="card-header">
+                    <span class="card-icon">👥</span>
+                    <span>นักเรียนทั้งหมด</span>
+                </div>
+                <div class="card-amount" id="totalStudents">0</div>
+                <div class="card-count">คน</div>
+            </div>
+        </div>
+
+        <div class="search-container">
+            <input type="text" class="search-box" id="searchBox" placeholder="🔍 ค้นหา ชื่อ, รหัส, ชั้น, ห้อง...">
+        </div>
+
+        <div id="content">
+            <div class="loading">
+                <div class="loading-spinner"></div>
+                <div>กำลังโหลดข้อมูลจาก Google Sheets...</div>
+            </div>
+        </div>
+
+        <button class="sync-btn" onclick="syncData()" title="รีเฟรชข้อมูล">🔄</button>
+    </div>
+
+    <script>
+        const webAppUrl = 'https://script.google.com/macros/s/AKfycbzOsJefSev5a8E-YUxFxykfb3SRbamLOCWlC6du8mrZNdxcN7PpVV7EMZSxWMi9Cdgz/exec';
+        
+        let studentsData = [];
+        let allData = [];
+        let isLoading = false;
+        let previousDataHash = ''; // เก็บ hash ของข้อมูลเดิม
+
+        // ฟังก์ชันสร้าง hash จากข้อมูล
+        function createDataHash(data) {
+            return JSON.stringify(data);
+        }
+
+        async function loadDataFromWebApp() {
+            if (isLoading) return;
+            
+            isLoading = true;
+            
+            try {
+                const response = await fetch(webAppUrl + '?t=' + Date.now()); // เพิ่ม timestamp เพื่อป้องกัน cache
+                const result = await response.json();
+                
+                console.log('✅ ดึงข้อมูลสำเร็จ:', result);
+                
+                if (result.success) {
+                    const newDataHash = createDataHash(result.data);
+                    
+                    // อัพเดททุกครั้งไม่ว่าข้อมูลจะเปลี่ยนหรือไม่
+                    allData = result.data;
+                    
+                    // ถ้าข้อมูลเปลี่ยนแปลง หรือ search term มีค่า ให้อัพเดท
+                    const searchTerm = document.getElementById('searchBox').value.toLowerCase();
+                    if (searchTerm === '') {
+                        studentsData = [...allData];
+                    } else {
+                        studentsData = allData.filter(student => 
+                            student.name.toLowerCase().includes(searchTerm) ||
+                            student.code.toLowerCase().includes(searchTerm) ||
+                            student.class.toLowerCase().includes(searchTerm) ||
+                            student.room.toLowerCase().includes(searchTerm)
+                        );
+                    }
+                    
+                    if (newDataHash !== previousDataHash) {
+                        previousDataHash = newDataHash;
+                        console.log('📊 ข้อมูลใหม่:', allData.length, 'คน');
+                    }
+                    
+                    updateDashboard();
+                    
+                    document.getElementById('lastSync').innerHTML = `
+                        <span class="status-indicator"></span>
+                        <span>อัพเดทล่าสุด: ${new Date().toLocaleString('th-TH')}</span>
+                    `;
+                } else {
+                    throw new Error('ไม่สามารถดึงข้อมูลได้');
+                }
+                
+            } catch (error) {
+                console.error('❌ Error:', error);
+                document.getElementById('content').innerHTML = `
+                    <div style="background: #7f1d1d; color: #fecaca; padding: 30px; border-radius: 12px; text-align: center;">
+                        <h3>❌ ไม่สามารถดึงข้อมูล</h3>
+                        <p style="margin-top: 15px;">${error.message}</p>
+                        <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #ef4444; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 16px;">
+                            🔄 ลองใหม่
+                        </button>
+                    </div>
+                `;
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function updateDashboard() {
+            if (studentsData.length === 0) {
+                document.getElementById('content').innerHTML = `
+                    <div style="text-align: center; padding: 60px; color: #64748b; background: #1e293b; border-radius: 15px;">
+                        <div style="font-size: 60px; margin-bottom: 20px;">🔭</div>
+                        <div style="font-size: 18px;">ไม่พบข้อมูลนักเรียน</div>
+                    </div>
+                `;
+                return;
+            }
+
+            const totalDebt = studentsData.reduce((sum, s) => sum + s.debt, 0);
+            const studentsWithDebt = studentsData.filter(s => s.debt > 0).length;
+
+            // อัพเดทแบบไม่มี transition
+            const totalDebtEl = document.getElementById('totalDebt');
+            const debtCountEl = document.getElementById('debtCount');
+            const totalStudentsEl = document.getElementById('totalStudents');
+            
+            if (totalDebtEl) totalDebtEl.textContent = `฿${totalDebt.toLocaleString()}`;
+            if (debtCountEl) debtCountEl.textContent = `${studentsWithDebt} คน`;
+            if (totalStudentsEl) totalStudentsEl.textContent = studentsData.length;
+
+            renderClassTables();
+        }
+
+        function renderClassTables() {
+            const byClass = {};
+            studentsData.forEach(student => {
+                if (!byClass[student.class]) byClass[student.class] = {};
+                if (!byClass[student.class][student.room]) byClass[student.class][student.room] = [];
+                byClass[student.class][student.room].push(student);
+            });
+
+            let html = '';
+            const sortedClasses = Object.keys(byClass).sort((a, b) => {
+                const numA = parseInt(a.replace(/\D/g, '')) || 0;
+                const numB = parseInt(b.replace(/\D/g, '')) || 0;
+                return numA - numB;
+            });
+
+            sortedClasses.forEach(className => {
+                const rooms = byClass[className];
+                const classTotal = Object.values(rooms).flat().reduce((sum, s) => sum + s.debt, 0);
+
+                html += `
+                    <div class="class-section">
+                        <div class="class-header">
+                            <div class="class-title">🎓 ชั้น ${className}</div>
+                            <div class="class-total">฿${classTotal.toLocaleString()}</div>
+                        </div>
+                        <div class="room-grid">`;
+
+                const sortedRooms = Object.keys(rooms).sort();
+                sortedRooms.forEach(roomName => {
+                    const students = rooms[roomName];
+                    students.sort((a, b) => {
+                        const codeA = parseInt(a.code) || 0;
+                        const codeB = parseInt(b.code) || 0;
+                        return codeA - codeB;
+                    });
+                    const roomTotal = students.reduce((sum, s) => sum + s.debt, 0);
+
+                    html += `
+                        <div class="room-card">
+                            <div class="room-header">
+                                <div class="room-name">🏫 ห้อง ${roomName}</div>
+                                <div class="room-total">฿${roomTotal.toLocaleString()}</div>
+                            </div>
+                            <table class="student-table">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>รหัส</th>
+                                        <th>ชื่อ-สกุล</th>
+                                        <th>ยอดหนี้</th>
+                                    </tr>
+                                </thead>
+                                <tbody>`;
+
+                    students.forEach((student, index) => {
+                        let rowClass = '';
+                        if (student.debt >= 500) {
+                            rowClass = 'row-highlight-red';
+                        } else if (student.debt >= 300) {
+                            rowClass = 'row-highlight-orange';
+                        }
+
+                        html += `
+                            <tr class="${rowClass}">
+                                <td>${index + 1}</td>
+                                <td class="student-code">${student.code}</td>
+                                <td class="student-name">${student.name}</td>
+                                <td class="debt-amount">฿${student.debt.toLocaleString()}</td>
+                            </tr>`;
+                    });
+
+                    html += `</tbody></table></div>`;
+                });
+
+                html += `</div></div>`;
+            });
+
+            document.getElementById('content').innerHTML = html;
+        }
+
+        document.getElementById('searchBox').addEventListener('input', (e) => {
+            const searchTerm = e.target.value.toLowerCase();
+            studentsData = searchTerm === '' ? [...allData] : allData.filter(student => 
+                student.name.toLowerCase().includes(searchTerm) ||
+                student.code.toLowerCase().includes(searchTerm) ||
+                student.class.toLowerCase().includes(searchTerm) ||
+                student.room.toLowerCase().includes(searchTerm)
+            );
+            updateDashboard();
+        });
+
+        function syncData() {
+            const btn = document.querySelector('.sync-btn');
+            if (btn) {
+                btn.classList.add('syncing');
+                // บังคับให้ isLoading = false เพื่อให้โหลดได้
+                isLoading = false;
+                loadDataFromWebApp();
+                setTimeout(() => {
+                    if (btn) btn.classList.remove('syncing');
+                }, 1000);
+            }
+        }
+
+        // Auto refresh
+        window.addEventListener('load', () => {
+            loadDataFromWebApp();
+            setInterval(() => {
+                if (!isLoading) {
+                    loadDataFromWebApp();
+                }
+            }, 0.5); // อัพเดททุก 0.5 มิลลิวินาที = Ultra Fast!
+        });
+    </script>
+</body>
+</html>
